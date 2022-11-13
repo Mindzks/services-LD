@@ -117,15 +117,19 @@ class CompanyController extends Controller
         //     'data' => 'updated'
         // ]);
     }
-    public function destroy(Company $company)
+    public function destroy($id, Company $company)
     {
-        $temp = Company::find($company);
-        $result =$company->forceDelete();
-        if($result){
+        $temp = Company::find($id);
+        if($temp){
+            $result = $temp->forceDelete();
             return new \Illuminate\Http\JsonResponse([
                 'message'=> 'company deleted',
                 'data' => $temp
             ]);
+        }else{
+            return new \Illuminate\Http\JsonResponse([
+                'message'=> 'Company not found'
+            ],404);
         }
     }
 
