@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Company;
 use App\Models\Service;
+use Illuminate\Support\Facades\Auth;
 
 class ServiceController extends Controller
 {
@@ -38,29 +39,36 @@ class ServiceController extends Controller
 
     public function store($company, Request $request)
     {
-        if (Request::capture()->expectsJson())
-        {  
-            $temp = Company::find($company);
-            if(is_null($temp)){
+        $user = Auth::user();
+        if($user->role == 2 || $user->role == 1 ){
+            if (Request::capture()->expectsJson())
+            {  
+                $temp = Company::find($company);
+                if(is_null($temp)){
+                    return response()->json([
+                        "message" => "Data not found (company)"
+                    ],404);
+                }
+                $request->validate([
+                    'name' => ['required','string'],
+                    'description' => ['required', 'string'],
+                    'price' => ['required','numeric', 'between:0.00,9999.99']
+                ]);
+                $temp = Service::create(array_merge($request->all(), ['company_id'=> $company]));
                 return response()->json([
-                    "message" => "Data not found (company)"
-                ],404);
+                    "data" => array_merge($request->all(), ['id'=> $temp["id"]])
+                ],201);
+            } 
+            else
+            {  
+                return response()->json([
+                    "message" => "Miss header accept application/json",
+                ],403);    
             }
-            $request->validate([
-                'name' => ['required','string'],
-                'description' => ['required', 'string'],
-                'price' => ['required','numeric', 'between:0.00,9999.99']
-            ]);
-            $temp = Service::create(array_merge($request->all(), ['company_id'=> $company]));
+        }else{
             return response()->json([
-                "data" => array_merge($request->all(), ['id'=> $temp["id"]])
-            ],201);
-        } 
-        else
-        {  
-            return response()->json([
-                "message" => "Miss header accept application/json",
-            ],403);    
+                "unauthorized"
+            ],403);
         }
     }
 
@@ -87,28 +95,57 @@ class ServiceController extends Controller
 
     public function update($company, $service, Request $request)
     {
-        $temp = Company::find($company);
-        json_decode($request->getContent());
+        $user = Auth::user();
+        if($user->role == 2 || $user->role == 1 ){
+            $temp = Company::find($company);
+            json_decode($request->getContent());
 
-        if (json_last_error() != JSON_ERROR_NONE) {
-            // There was an error
-            return response()->json([
-                "message" => "Bad json"
-            ],400);
-        }
+            if (json_last_error() != JSON_ERROR_NONE) {
+                // There was an error
+                return response()->json([
+                    "message" => "Bad json"
+                ],400);
+            }
 
-        if(is_null($temp)){
-            return response()->json([
-                "message" => "Data not found (company)"
-            ],404);
+            if(is_null($temp)){
+                return response()->json([
+                    "message" => "Data not found (company)"
+                ],404);
+            }else{
+                $request->validate([
+                    'name' => ['sometimes','required','string'],
+                    'description' => ['sometimes','required', 'string'],
+                    'price' => ['sometimes','required','numeric', 'between:0.00,9999.99']
+                ]);
+                $temp_service = DB::table('services')->where('company_id',"=",$company)->where('id',"=",$service)->get();
+                // $temp_service = Service::find($service);
+                
+                if(count($temp_service)==0){
+                    return response()->json([
+                        "message" => "Company don't have service with particular ID"
+                    ],404);
+                }
+
+                $service_update = Service::find($service);
+
+                $service_update->update($request->all());
+
+                return response()->json([
+                    "data" => $service_update
+                ]);
+            }
         }else{
-            $request->validate([
-                'name' => ['sometimes','required','string'],
-                'description' => ['sometimes','required', 'string'],
-                'price' => ['sometimes','required','numeric', 'between:0.00,9999.99']
-            ]);
+            return response()->json([
+                "unauthorized"
+            ],403);
+        }
+    }
+
+    public function destroy($company, $service, Request $request)
+    {
+        $user = Auth::user();
+        if($user->role == 2 || $user->role == 1 ){
             $temp_service = DB::table('services')->where('company_id',"=",$company)->where('id',"=",$service)->get();
-            // $temp_service = Service::find($service);
             
             if(count($temp_service)==0){
                 return response()->json([
@@ -117,30 +154,15 @@ class ServiceController extends Controller
             }
 
             $service_update = Service::find($service);
-
-            $service_update->update($request->all());
+            $service_update->forceDelete();
 
             return response()->json([
                 "data" => $service_update
             ]);
-        }
-    }
-
-    public function destroy($company, $service, Request $request)
-    {
-        $temp_service = DB::table('services')->where('company_id',"=",$company)->where('id',"=",$service)->get();
-        
-        if(count($temp_service)==0){
+        }else{
             return response()->json([
-                "message" => "Company don't have service with particular ID"
-            ],404);
+                "unauthorized"
+            ],403);
         }
-
-        $service_update = Service::find($service);
-        $service_update->forceDelete();
-
-        return response()->json([
-            "data" => $service_update
-        ]);
     }
 }
