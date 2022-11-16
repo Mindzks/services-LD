@@ -53,33 +53,36 @@ class CustomerController extends Controller
 
     public function store($company, $service, Request $request)
     {
-        $temp = Company::find($company);
-        if(is_null($temp)){
-            return response()->json([
-                "message" => "Data not found (company)"
-            ],404);
-        }else{
-            $temp_service = DB::table('services')->where('company_id',"=",$company)->where('id',"=",$service)->get();
-            
-            if(count($temp_service)==0){
+        $user = Auth::user();
+        if($user->role == 2){
+            $temp = Company::find($company);
+            if(is_null($temp)){
                 return response()->json([
-                    "message" => "Service with the given ID don't exist"
+                    "message" => "Data not found (company)"
                 ],404);
             }else{
-                $request->validate([
-                    'name' => ['required','string'],
-                    'surname' => ['required','string'],
-                    'email' => ['required','string'],
-                    'personal_code' => ['required'],
-                    'city' => ['required','string'],
-                    'street' => ['required','string'],
-                    'house_number' => ['required','string'],
-                ]);
-                $temp = Customer::create(array_merge($request->all(), ['service_id'=> $service]));
+                $temp_service = DB::table('services')->where('company_id',"=",$company)->where('id',"=",$service)->get();
                 
-                return response()->json([
-                    "data" => array_merge($request->all(), ['id'=> $temp['id']])
-                ],201);
+                if(count($temp_service)==0){
+                    return response()->json([
+                        "message" => "Service with the given ID don't exist"
+                    ],404);
+                }else{
+                    $request->validate([
+                        'name' => ['required','string'],
+                        'surname' => ['required','string'],
+                        'email' => ['required','string'],
+                        'personal_code' => ['required'],
+                        'city' => ['required','string'],
+                        'street' => ['required','string'],
+                        'house_number' => ['required','string'],
+                    ]);
+                    $temp = Customer::create(array_merge($request->all(), ['service_id'=> $service]));
+                    
+                    return response()->json([
+                        "data" => array_merge($request->all(), ['id'=> $temp['id']])
+                    ],201);
+                }
             }
         }
     }
