@@ -54,7 +54,7 @@ class CustomerController extends Controller
     public function store($company, $service, Request $request)
     {
         $user = Auth::user();
-        if($user->role == 2){
+        if($user->role == 2 || $user->role == 1){
             $temp = Company::find($company);
             if(is_null($temp)){
                 return response()->json([
