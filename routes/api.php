@@ -44,7 +44,7 @@ Route::controller(ServiceController::class)->group(function () {
 Route::controller(CustomerController::class)->group(function () {
     Route::get('/companies/{company}/services/{service}/customers', 'index');
     Route::post('/companies/{company}/services/{service}/customers', 'store');
-    Route::get('/companies/{company}/services/{service}/customers/{customer}', 'show');
+    Route::get('/companies/{company}/services/{service}/customers/{customer_id}', 'show');
     Route::put('/companies/{company}/services/{service}/customers/{customer}', 'update');
     Route::delete('/companies/{company}/services/{service}/customers/{customer}', 'destroy');
 }); 
