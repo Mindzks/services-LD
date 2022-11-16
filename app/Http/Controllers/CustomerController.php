@@ -84,6 +84,10 @@ class CustomerController extends Controller
                     ],201);
                 }
             }
+        }else{
+            return response()->json([
+                "unauthorized"
+            ],403);
         }
     }
 
